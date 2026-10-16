@@ -1,0 +1,51 @@
+# Interface interactive d'animation
+
+Les participants scannent un QR code avec leur téléphone et envoient **une phrase** (post-it), **un mot** (nuage de mots) ou **une photo**. Tout apparaît en direct sur un tableau projeté, où l'on peut zoomer et se déplacer.
+
+## Les trois adresses
+
+| Adresse | Pour qui | Rôle |
+|---|---|---|
+| `/` | Participants | Trois boutons en bas : Phrase, Mot, Photo. **C'est cette adresse qu'on met dans le QR code.** |
+| `/tableau` | Public (projection) | Le tableau, sans aucun bouton. |
+| `/tableau?code=TON_CODE` | Animateur | Le même tableau, avec la barre de contrôle (changer de vue, recentrer, exporter en PDF, vider) et la croix de suppression au survol de chaque élément. |
+
+Raccourcis : `1` mots, `2` post-it, `3` photos, `0` tout recentrer. Double-clic sur le fond = tout recentrer.
+Zoom : molette ou pincement. Déplacement : glisser.
+
+## Essayer chez soi (sur l'ordinateur)
+
+```bash
+cd ~/Développement/interface-interactive-animation
+npm install
+npm start
+```
+
+Puis ouvrir `http://localhost:3000/tableau?code=animateur`.
+(Les téléphones ne peuvent pas y accéder : pour eux, il faut la mise en ligne ci-dessous.)
+
+## Mise en ligne (nécessaire pour l'université)
+
+Le Wi-Fi d'une université isole souvent les appareils entre eux : un serveur sur ton ordinateur ne serait pas joignable par les téléphones. On met donc le serveur sur Internet, avec une adresse fixe, donc **un QR code qu'on peut imprimer à l'avance**.
+
+Option simple et gratuite : **Render** (render.com).
+
+1. Mettre le dossier sur GitHub (GitHub Desktop → « Publish repository »).
+2. Sur render.com : *New → Web Service* → choisir le dépôt.
+3. Réglages : *Build command* `npm install`, *Start command* `npm start`.
+4. Dans *Environment*, ajouter la variable **`CODE_ANIMATEUR`** avec le code secret de ton choix.
+5. Render donne une adresse du type `https://xxx.onrender.com`. C'est elle qu'on met dans le QR code (InDesign).
+
+À savoir :
+- Le plan gratuit **s'endort après 15 min sans visite** et met ~50 s à se réveiller : ouvre l'adresse 5 minutes avant la séance.
+- Le tableau est **gardé en mémoire** : si le serveur redémarre, il est vidé. D'où l'export PDF.
+
+## Export PDF
+
+Bouton « Exporter en PDF » (barre animateur). Une page par vue non vide, taille de page adaptée au contenu, texte net même en zoomant. Dans la fenêtre d'impression de **Chrome** : destination « Enregistrer au format PDF », marges « Aucune », décocher « En-têtes et pieds de page ».
+
+## Limites actuelles
+
+- Pensé pour moins de 50 personnes.
+- Aucune modération préalable : tout s'affiche tout de suite, l'animateur supprime après coup.
+- Pas de sauvegarde automatique : exporter le PDF avant de fermer.

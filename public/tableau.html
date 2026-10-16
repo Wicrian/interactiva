@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tableau</title>
+<style>
+  :root { --fond:#fbf6f3; --encre:#2d1f2e; --doux:#7a6a7b; --rose:#e0447c; --rose-fonce:#b82d62; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; background: var(--fond); color: var(--encre); }
+  #scene { position: fixed; inset: 0; touch-action: none; cursor: grab; }
+  #scene.glisse { cursor: grabbing; }
+  #monde { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  #monde.anim { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+
+  .el { position: absolute; left: 0; top: 0; }
+  .el.anim { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+  .mot { font-weight: 800; line-height: 1.1; white-space: nowrap; letter-spacing: -.01em; }
+  .postit { padding: 14px; font-weight: 600; line-height: 1.25; overflow: hidden; overflow-wrap: anywhere; border-radius: 4px; box-shadow: 0 6px 14px rgba(45,31,46,.16); display: flex; align-items: center; justify-content: center; text-align: center; }
+  .photo { background: #fff; padding: 8px 8px 8px; box-shadow: 0 8px 20px rgba(45,31,46,.22); border-radius: 3px; }
+  .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .el.neuf { animation: pop .45s cubic-bezier(.2,.9,.3,1.3); }
+  @keyframes pop { from { opacity: 0; scale: .6; } }
+  @media (prefers-reduced-motion: reduce) { .el.neuf { animation: none; } #monde.anim, .el.anim { transition: none; } }
+
+  .suppr { position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--rose); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; display: none; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .admin .el:hover .suppr, .suppr:focus-visible { display: block; }
+
+  #vide { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; color: var(--doux); font-size: 2rem; pointer-events: none; padding: 0 10vw; }
+  #vide b { color: var(--rose-fonce); }
+  #pied { position: fixed; left: 20px; bottom: 16px; color: var(--doux); font-size: 1.1rem; pointer-events: none; }
+  #pied b { color: var(--encre); }
+  #barre { position: fixed; top: 14px; right: 14px; display: none; gap: 6px; background: #fff; padding: 6px; border-radius: 14px; box-shadow: 0 6px 20px rgba(45,31,46,.18); transition: opacity .4s; }
+  .admin #barre { display: flex; }
+  #barre.cache { opacity: 0; pointer-events: none; }
+  #barre button { font: inherit; font-weight: 600; border: 0; background: transparent; color: var(--encre); padding: 10px 14px; border-radius: 10px; cursor: pointer; }
+  #barre button:hover { background: #f5e8ee; }
+  #barre button[aria-pressed=true] { background: var(--rose); color: #fff; }
+  #barre button:focus-visible { outline: 3px solid var(--rose); }
+  #barre .sep { width: 1px; background: #ecdfe6; margin: 4px 2px; }
+  #impression { display: none; }
+
+  @media print {
+    html, body { overflow: visible; height: auto; background: #fff; }
+    body > *:not(#impression) { display: none !important; }
+    #impression { display: block; }
+    .page-imp { position: relative; overflow: hidden; break-after: page; background: #fbf6f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page-imp:last-child { break-after: auto; }
+    .page-imp .el { transition: none; animation: none; }
+    .page-imp h2 { position: absolute; margin: 0; font-weight: 700; color: #7a6a7b; }
+    .suppr { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="scene"><div id="monde"></div></div>
+<div id="vide"><p>En attendant vos idées…<br><b id="vide-lien"></b></p></div>
+<div id="pied">Participe sur <b id="lien"></b></div>
+<div id="barre" role="toolbar" aria-label="Contrôles de l'animateur">
+  <button data-vue="mots" aria-pressed="true">Mots</button>
+  <button data-vue="postit" aria-pressed="false">Post-it</button>
+  <button data-vue="photos" aria-pressed="false">Photos</button>
+  <span class="sep"></span>
+  <button id="recentrer" title="Tout voir (touche 0)">Recentrer</button>
+  <button id="pdf">Exporter en PDF</button>
+  <button id="vider">Vider</button>
+</div>
+<div id="impression"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const code = new URLSearchParams(location.search).get('code');
+const admin = !!code;
+if (admin) document.body.classList.add('admin');
+$('lien').textContent = $('vide-lien').textContent = location.host;
+
+const FONT = '-apple-system, "Segoe UI", system-ui, sans-serif';
+const MARGE = 18;
+const COULEURS_MOTS = ['#e0447c', '#6b3fa0', '#2a7f9e', '#d9822b', '#3a8f5a', '#b82d62'];
+const COULEURS_POSTIT = ['#fff3a8', '#ffd1e0', '#cfe8ff', '#d4f4d0', '#ffe0b8', '#e6d9ff'];
+const TITRES = { mots: 'Nuage de mots', postit: 'Post-it', photos: 'Photos' };
+
+const cle = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+function hash(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
+
+const mesure = document.createElement('canvas').getContext('2d');
+
+// Place les éléments un par un en spirale, sans jamais les superposer.
+function spirale(items) {
+  const places = [];
+  for (const it of items) {
+    let t = 0;
+    for (;;) {
+      const r = 3.2 * t;
+      const x = Math.cos(t) * r * 1.6 - it.w / 2, y = Math.sin(t) * r - it.h / 2;
+      if (!places.some((p) => x < p.x + p.w + MARGE && x + it.w + MARGE > p.x && y < p.y + p.h + MARGE && y + it.h + MARGE > p.y)) {
+        it.x = x; it.y = y; places.push(it); break;
+      }
+      t += 14 / (r + 20);
+    }
+  }
+  return items;
+}
+
+function disposition(vue, etat) {
+  if (vue === 'mots') {
+    const groupes = new Map();
+    for (const m of etat.mots) {
+      const k = cle(m.texte);
+      const g = groupes.get(k) || { id: 'w:' + k, type: 'mot', texte: m.texte, n: 0, mid: m.id };
+      g.n++; groupes.set(k, g);
+    }
+    const liste = [...groupes.values()].sort((a, b) => b.n - a.n);
+    const max = liste.length ? liste[0].n : 1;
+    for (const g of liste) {
+      g.taille = 32 + 100 * Math.sqrt(g.n / max);
+      mesure.font = `800 ${g.taille}px ${FONT}`;
+      g.w = mesure.measureText(g.texte).width + 8; g.h = g.taille * 1.15;
+      g.couleur = COULEURS_MOTS[hash(cle(g.texte)) % COULEURS_MOTS.length];
+    }
+    return spirale(liste);
+  }
+  if (vue === 'postit') {
+    return spirale(etat.messages.map((m) => {
+      const l = m.texte.length;
+      return { id: m.id, type: 'postit', texte: m.texte, w: 240, h: 190, taille: l <= 40 ? 26 : l <= 90 ? 22 : l <= 150 ? 18 : 15,
+        couleur: COULEURS_POSTIT[hash(m.id) % COULEURS_POSTIT.length], rot: ((hash(m.id) % 5) - 2) * 0.9 };
+    }));
+  }
+  return spirale(etat.photos.map((p) => {
+    const h = 210, w = Math.max(140, Math.min(320, Math.round(h * p.w / p.h)));
+    return { id: p.id, type: 'photo', w: w + 16, h: h + 16, rot: ((hash(p.id) % 7) - 3) * 0.9 };
+  }));
+}
+
+function creer(it) {
+  const el = document.createElement('div');
+  el.className = 'el ' + it.type; el.dataset.id = it.id;
+  if (it.type === 'mot') { el.textContent = it.texte; el.style.fontSize = it.taille + 'px'; el.style.color = it.couleur; }
+  if (it.type === 'postit') { el.textContent = it.texte; el.style.fontSize = it.taille + 'px'; el.style.background = it.couleur; }
+  if (it.type === 'photo') { const im = document.createElement('img'); im.src = '/img/' + it.id; im.alt = ''; el.appendChild(im); }
+  return el;
+}
+function placer(el, it) {
+  el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
+  el.style.transform = `translate(${it.x}px, ${it.y}px) rotate(${it.rot || 0}deg)`;
+  if (it.type === 'mot') el.style.fontSize = it.taille + 'px';
+}
+function boite(items) {
+  if (!items.length) return { x: -300, y: -200, w: 600, h: 400 };
+  const x0 = Math.min(...items.map((i) => i.x)), y0 = Math.min(...items.map((i) => i.y));
+  const x1 = Math.max(...items.map((i) => i.x + i.w)), y1 = Math.max(...items.map((i) => i.y + i.h));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+// ---- Affichage ----
+const monde = $('monde'), scene = $('scene');
+const dom = new Map();
+let etat = { vue: 'mots', mots: [], messages: [], photos: [] };
+let items = [], vue = { x: 0, y: 0, k: 1 }, auto = true, vueAffichee = null;
+
+function appliquerVue(anim) {
+  monde.classList.toggle('anim', !!anim);
+  monde.style.transform = `translate(${vue.x}px, ${vue.y}px) scale(${vue.k})`;
+}
+function recentrer(anim = true) {
+  const b = boite(items);
+  const lw = innerWidth * 0.92, lh = (innerHeight - 70) * 0.92;
+  vue.k = Math.min(lw / b.w, lh / b.h, 1.5);
+  vue.x = innerWidth / 2 - (b.x + b.w / 2) * vue.k;
+  vue.y = (innerHeight - 40) / 2 - (b.y + b.h / 2) * vue.k;
+  auto = true; appliquerVue(anim);
+}
+
+function rendre() {
+  const changementVue = vueAffichee !== etat.vue;
+  vueAffichee = etat.vue;
+  if (changementVue) { monde.replaceChildren(); dom.clear(); }
+  items = disposition(etat.vue, etat);
+  const vus = new Set();
+  for (const it of items) {
+    vus.add(it.id);
+    let el = dom.get(it.id);
+    if (!el) {
+      el = creer(it);
+      if (admin) {
+        const b = document.createElement('button');
+        b.className = 'suppr'; b.textContent = '×'; b.setAttribute('aria-label', 'Supprimer');
+        b.addEventListener('pointerdown', (e) => e.stopPropagation());
+        b.addEventListener('click', () => ws.send(JSON.stringify({ t: 'admin', code, action: 'supprimer', type: it.type, id: it.type === 'mot' ? it.mid : it.id })));
+        el.appendChild(b);
+      }
+      placer(el, it);
+      if (!changementVue) el.classList.add('neuf');
+      monde.appendChild(el); dom.set(it.id, el);
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('anim')));
+    } else placer(el, it);
+  }
+  for (const [id, el] of dom) if (!vus.has(id)) { el.remove(); dom.delete(id); }
+  $('vide').style.display = items.length ? 'none' : 'flex';
+  $('pied').style.display = items.length ? 'block' : 'none';
+  document.querySelectorAll('#barre [data-vue]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.vue === etat.vue));
+  if (auto || changementVue) recentrer(!changementVue);
+}
+
+// ---- Zoom et déplacement ----
+scene.addEventListener('wheel', (e) => {
+  e.preventDefault(); auto = false;
+  const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015));
+  const k = Math.min(8, Math.max(0.05, vue.k * f)), r = k / vue.k;
+  vue.x = e.clientX - (e.clientX - vue.x) * r; vue.y = e.clientY - (e.clientY - vue.y) * r; vue.k = k;
+  appliquerVue(false);
+}, { passive: false });
+
+const pointeurs = new Map(); let distance0 = 0;
+scene.addEventListener('pointerdown', (e) => { scene.setPointerCapture(e.pointerId); pointeurs.set(e.pointerId, [e.clientX, e.clientY]); scene.classList.add('glisse'); distance0 = 0; });
+scene.addEventListener('pointermove', (e) => {
+  if (!pointeurs.has(e.pointerId)) return;
+  const [px, py] = pointeurs.get(e.pointerId); pointeurs.set(e.pointerId, [e.clientX, e.clientY]);
+  auto = false;
+  if (pointeurs.size === 1) { vue.x += e.clientX - px; vue.y += e.clientY - py; }
+  else if (pointeurs.size === 2) {
+    const [a, b] = [...pointeurs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (distance0) {
+      const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, k = Math.min(8, Math.max(0.05, vue.k * d / distance0)), r = k / vue.k;
+      vue.x = cx - (cx - vue.x) * r; vue.y = cy - (cy - vue.y) * r; vue.k = k;
+    }
+    distance0 = d;
+  }
+  appliquerVue(false);
+});
+const fin = (e) => { pointeurs.delete(e.pointerId); distance0 = 0; if (!pointeurs.size) scene.classList.remove('glisse'); };
+scene.addEventListener('pointerup', fin); scene.addEventListener('pointercancel', fin);
+scene.addEventListener('dblclick', () => recentrer());
+addEventListener('resize', () => { if (auto) recentrer(false); });
+
+// ---- Contrôles animateur ----
+function admin_(action, extra) { ws.send(JSON.stringify({ t: 'admin', code, action, ...extra })); }
+addEventListener('keydown', (e) => {
+  if (e.key === '0') recentrer();
+  if (admin && ['1', '2', '3'].includes(e.key)) admin_('vue', { vue: ['mots', 'postit', 'photos'][e.key - 1] });
+});
+if (admin) {
+  document.querySelectorAll('#barre [data-vue]').forEach((b) => b.addEventListener('click', () => admin_('vue', { vue: b.dataset.vue })));
+  $('recentrer').onclick = () => recentrer();
+  $('vider').onclick = () => { if (confirm('Vider tout le tableau (mots, post-it et photos) ?')) admin_('vider'); };
+  $('pdf').onclick = exporterPDF;
+  let t; const barre = $('barre');
+  const montrer = () => { barre.classList.remove('cache'); clearTimeout(t); t = setTimeout(() => barre.classList.add('cache'), 4000); };
+  addEventListener('mousemove', montrer); addEventListener('pointerdown', montrer); montrer();
+}
+
+// ---- Export PDF : une page par vue, taille adaptée au contenu, texte net (vectoriel) ----
+async function exporterPDF() {
+  const conteneur = $('impression'); conteneur.replaceChildren();
+  const css = []; const date = new Date().toLocaleDateString('fr-CA');
+  ['mots', 'postit', 'photos'].forEach((v, i) => {
+    const liste = disposition(v, etat);
+    if (!liste.length) return;
+    const b = boite(liste), pad = 80, haut = 140;
+    let W = b.w + pad * 2, H = b.h + pad + haut;
+    const s = Math.min(1, 15000 / Math.max(W, H));
+    const page = document.createElement('div');
+    page.className = 'page-imp'; page.style.cssText = `page: p${i}; width:${W * s}px; height:${H * s}px`;
+    const titre = document.createElement('h2');
+    titre.textContent = `${TITRES[v]} — ${date}`; titre.style.cssText = `left:${pad * s}px; top:${40 * s}px; font-size:${40 * s}px`;
+    const interieur = document.createElement('div');
+    interieur.style.cssText = `position:absolute; left:0; top:0; transform-origin:0 0; transform:scale(${s})`;
+    for (const it of liste) {
+      const el = creer(it); placer(el, { ...it, x: it.x - b.x + pad, y: it.y - b.y + haut });
+      interieur.appendChild(el);
+    }
+    page.append(titre, interieur); conteneur.appendChild(page);
+    css.push(`@page p${i} { size: ${W * s}px ${H * s}px; margin: 0 }`);
+  });
+  if (!conteneur.children.length) return alert('Le tableau est vide : rien à exporter.');
+  const style = document.createElement('style'); style.textContent = css.join('\n'); document.head.appendChild(style);
+  await Promise.all([...conteneur.querySelectorAll('img')].map((im) => im.decode().catch(() => {})));
+  alert("Dans la fenêtre d'impression, choisis « Enregistrer au format PDF » comme destination, et décoche « En-têtes et pieds de page ». Marges : aucune.");
+  print();
+  style.remove(); conteneur.replaceChildren();
+}
+
+// ---- Connexion en direct ----
+let ws;
+function connecter() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.t === 'etat') { etat = m.etat; rendre(); } };
+  ws.onclose = () => setTimeout(connecter, 1500);
+}
+connecter();
+recentrer(false);
+</script>
+</body>
+</html>

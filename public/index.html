@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Participer</title>
+<style>
+  :root { --fond:#fbf6f3; --encre:#2d1f2e; --doux:#7a6a7b; --rose:#e0447c; --rose-fonce:#b82d62; --carte:#fff; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; background: var(--fond); color: var(--encre); display: flex; flex-direction: column; }
+  main { flex: 1; padding: 24px 20px 12px; display: flex; flex-direction: column; gap: 14px; max-width: 520px; width: 100%; margin: 0 auto; overflow-y: auto; }
+  h1 { font-size: 1.5rem; margin: 0; }
+  p { margin: 0; color: var(--doux); }
+  section[hidden] { display: none; }
+  section { display: flex; flex-direction: column; gap: 14px; }
+  textarea, input[type=text] { font: inherit; font-size: 1.1rem; padding: 14px; border: 2px solid #e6d9e0; border-radius: 14px; background: var(--carte); color: var(--encre); width: 100%; }
+  textarea { min-height: 150px; resize: none; }
+  textarea:focus, input:focus { outline: 3px solid var(--rose); outline-offset: 1px; border-color: var(--rose); }
+  .envoyer { font: inherit; font-size: 1.15rem; font-weight: 700; padding: 16px; border: 0; border-radius: 14px; background: var(--rose); color: #fff; cursor: pointer; }
+  .envoyer:active { background: var(--rose-fonce); }
+  .envoyer:focus-visible { outline: 3px solid var(--encre); outline-offset: 2px; }
+  .envoyer:disabled { opacity: .5; }
+  #apercu { max-width: 100%; max-height: 260px; border-radius: 14px; align-self: center; }
+  #apercu[hidden] { display: none; }
+  .merci { background: #e8f6ec; color: #1f5b34; border-radius: 12px; padding: 12px 14px; font-weight: 600; }
+  .merci[hidden] { display: none; }
+  nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--carte); border-top: 1px solid #ecdfe6; }
+  nav button { font: inherit; font-size: .95rem; font-weight: 600; border: 0; background: transparent; color: var(--doux); padding: 8px 4px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  nav button span { font-size: 1.6rem; line-height: 1; }
+  nav button[aria-selected=true] { background: #fde7ef; color: var(--rose-fonce); }
+  nav button:focus-visible { outline: 3px solid var(--rose); }
+  #choisir { display: none; }
+  @media (prefers-reduced-motion: no-preference) { .merci { animation: entree .25s ease-out; } @keyframes entree { from { opacity: 0; transform: translateY(6px); } } }
+</style>
+</head>
+<body>
+<main>
+  <div class="merci" id="merci" role="status" hidden>Envoyé, regarde l'écran !</div>
+
+  <section id="p-message">
+    <h1>Une phrase</h1>
+    <p>Elle apparaîtra sur un post-it.</p>
+    <textarea id="t-message" maxlength="200" placeholder="Ton idée, en une ou deux phrases…" aria-label="Ta phrase"></textarea>
+    <button class="envoyer" id="e-message">Envoyer</button>
+  </section>
+
+  <section id="p-mot" hidden>
+    <h1>Un mot</h1>
+    <p>Les mots répétés grossissent sur l'écran.</p>
+    <input type="text" id="t-mot" maxlength="30" placeholder="Un mot…" aria-label="Ton mot" autocomplete="off">
+    <button class="envoyer" id="e-mot">Envoyer</button>
+  </section>
+
+  <section id="p-photo" hidden>
+    <h1>Une photo</h1>
+    <p>Prends-la maintenant ou choisis-en une.</p>
+    <img id="apercu" alt="Aperçu de ta photo" hidden>
+    <input type="file" id="choisir" accept="image/*">
+    <button class="envoyer" id="e-prendre">Prendre ou choisir une photo</button>
+    <button class="envoyer" id="e-photo" hidden>Envoyer cette photo</button>
+  </section>
+</main>
+
+<nav role="tablist" aria-label="Que veux-tu partager ?">
+  <button role="tab" aria-selected="true" data-p="message"><span aria-hidden="true">💬</span>Phrase</button>
+  <button role="tab" aria-selected="false" data-p="mot"><span aria-hidden="true">🔤</span>Mot</button>
+  <button role="tab" aria-selected="false" data-p="photo"><span aria-hidden="true">📷</span>Photo</button>
+</nav>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let ws, file = [];
+function connecter() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+  ws.onclose = () => setTimeout(connecter, 1500);
+  ws.onopen = () => { file.splice(0).forEach((m) => ws.send(m)); };
+}
+connecter();
+function envoyer(obj) {
+  const m = JSON.stringify(obj);
+  if (ws.readyState === 1) ws.send(m); else file.push(m);
+}
+let chrono;
+function merci(texte = "Envoyé, regarde l'écran !") {
+  $('merci').textContent = texte; $('merci').hidden = false;
+  clearTimeout(chrono); chrono = setTimeout(() => { $('merci').hidden = true; }, 3000);
+}
+
+document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach((x) => x.setAttribute('aria-selected', x === b));
+  ['message', 'mot', 'photo'].forEach((p) => { $('p-' + p).hidden = p !== b.dataset.p; });
+  $('merci').hidden = true;
+}));
+
+$('e-message').onclick = () => {
+  const texte = $('t-message').value.trim(); if (!texte) return;
+  envoyer({ t: 'message', texte }); $('t-message').value = ''; merci();
+};
+function envoyerMot() {
+  const texte = $('t-mot').value.trim(); if (!texte) return;
+  envoyer({ t: 'mot', texte }); $('t-mot').value = ''; $('t-mot').focus(); merci();
+}
+$('e-mot').onclick = envoyerMot;
+$('t-mot').addEventListener('keydown', (e) => { if (e.key === 'Enter') envoyerMot(); });
+
+// Photo : on la réduit sur le téléphone avant l'envoi (rapide, même en Wi-Fi chargé).
+let blob, dims;
+$('e-prendre').onclick = () => $('choisir').click();
+$('choisir').onchange = async () => {
+  const f = $('choisir').files[0]; if (!f) return;
+  const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' });
+  const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.85));
+  dims = [c.width, c.height];
+  $('apercu').src = URL.createObjectURL(blob); $('apercu').hidden = false;
+  $('e-photo').hidden = false; $('e-prendre').textContent = 'Choisir une autre photo';
+};
+$('e-photo').onclick = async () => {
+  $('e-photo').disabled = true;
+  try {
+    const r = await fetch(`/photo?w=${dims[0]}&h=${dims[1]}`, { method: 'POST', headers: { 'content-type': 'image/jpeg' }, body: blob });
+    if (!r.ok) throw 0;
+    $('apercu').hidden = true; $('e-photo').hidden = true; $('e-prendre').textContent = 'Prendre ou choisir une photo';
+    $('choisir').value = ''; merci();
+  } catch { merci("Oups, l'envoi a échoué. Réessaie."); }
+  $('e-photo').disabled = false;
+};
+</script>
+</body>
+</html>
