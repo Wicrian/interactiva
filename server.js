@@ -72,7 +72,10 @@ wss.on('connection', (ws) => {
       etat.mots.push({ id: randomUUID(), texte: texte.slice(0, MAX_MOT) });
     } else if (m.t === 'message' && texte) {
       etat.messages.push({ id: randomUUID(), texte: texte.slice(0, MAX_MESSAGE) });
-    } else if (m.t === 'admin' && m.code === CODE) {
+    } else if (m.t === 'admin' && m.code !== CODE) {
+      ws.send(JSON.stringify({ t: 'refus' }));
+      return;
+    } else if (m.t === 'admin') {
       if (m.action === 'vue' && ['mots', 'postit', 'photos'].includes(m.vue)) etat.vue = m.vue;
       else if (m.action === 'supprimer') {
         const liste = { mot: 'mots', message: 'messages', photo: 'photos' }[m.type];

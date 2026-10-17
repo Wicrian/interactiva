@@ -286,7 +286,11 @@ async function exporterPDF() {
 let ws;
 function connecter() {
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
-  ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.t === 'etat') { etat = m.etat; rendre(); } };
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.t === 'etat') { etat = m.etat; rendre(); }
+    if (m.t === 'refus') alert("Le code animateur est incorrect : la modification a été refusée.\nVérifie la fin de l'adresse (?code=…) : elle doit être exactement le code de Render.");
+  };
   ws.onclose = () => setTimeout(connecter, 1500);
 }
 connecter();
