@@ -10,7 +10,7 @@ Les participants scannent un QR code avec leur téléphone et envoient **une phr
 | `/tableau` | Public (projection) | Le tableau, sans aucun bouton. |
 | `/tableau?code=TON_CODE` | Animateur | Le même tableau, avec la barre de contrôle (changer de vue, recentrer, exporter en PDF, vider) et la croix de suppression au survol de chaque élément. |
 
-Raccourcis : `1` mots, `2` post-it, `3` photos, `0` tout recentrer. Double-clic sur le fond = tout recentrer.
+Raccourcis : `1` mots, `2` post-it, `3` photos, `Échap` vue d'ensemble, `0` recentrer, `Q` grand QR code. Clic sur une zone = zoom dessus ; clic dans le vide = retour à la vue d'ensemble.
 Zoom : molette ou pincement. Déplacement : glisser.
 
 ## Essayer chez soi (sur l'ordinateur)
@@ -40,9 +40,17 @@ Option simple et gratuite : **Render** (render.com).
 - Le plan gratuit **s'endort après 15 min sans visite** et met ~50 s à se réveiller : ouvre l'adresse 5 minutes avant la séance.
 - Le tableau est **gardé en mémoire** : si le serveur redémarre, il est vidé. D'où l'export PDF.
 
-## Export PDF
+## Exports (barre animateur)
 
-Bouton « Exporter en PDF » (barre animateur). Une page par vue non vide, taille de page adaptée au contenu, texte net même en zoomant. Dans la fenêtre d'impression de **Chrome** : destination « Enregistrer au format PDF », marges « Aucune », décocher « En-têtes et pieds de page ».
+Fonctionnent dans Chrome comme dans Safari : les fichiers sont fabriqués par la page elle-même, sans passer par la fenêtre d'impression.
+
+- **PDF** : tout le tableau (les trois zones) sur **une seule grande page**, texte et formes en vectoriel (net à tout zoom).
+- **Image** : le même tableau en PNG très grande taille (jusqu'à 8000 px de côté).
+- **Idées (tableur)** : fichier `.csv` (s'ouvre dans Excel, Numbers…), une ligne par idée, **sans aucun nom** : les mots avec leur nombre de répétitions, puis les phrases. Pratique pour le renvoyer aux participants.
+
+## Le QR code
+
+Le fichier est dans `QRCODE/`, et une copie sert au tableau (`public/qr.svg`) : un petit QR est affiché en bas à gauche. Clic dessus (ou touche `Q`) pour l'afficher en grand. Si l'adresse du site change, remplacer ce fichier.
 
 ## Limites actuelles
 

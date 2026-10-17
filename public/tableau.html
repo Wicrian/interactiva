@@ -48,17 +48,6 @@
   #barre button[aria-pressed=true] { background: var(--rose); color: #fff; }
   #barre button:focus-visible { outline: 3px solid var(--rose); }
   #barre .sep { width: 1px; background: #ecdfe6; margin: 4px 2px; }
-  #impression { display: none; }
-
-  @media print {
-    html, body { overflow: visible; height: auto; background: #fbf6f3; }
-    body > *:not(#impression) { display: none !important; }
-    #impression { display: block; }
-    #impression .page-imp { position: relative; overflow: hidden; background: #fbf6f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .page-imp .el { transition: none; animation: none; }
-    .page-imp h1 { position: absolute; margin: 0; font-weight: 800; color: #2d1f2e; }
-    .suppr { display: none !important; }
-  }
 </style>
 </head>
 <body>
@@ -72,11 +61,11 @@
   <button data-vue="photos" aria-pressed="false">Photos</button>
   <span class="sep"></span>
   <button id="recentrer" title="Remettre dans le cadre (touche 0)">Recentrer</button>
-  <button id="pdf">PDF</button>
+  <button id="pdf" title="Tout le tableau sur une seule page, très haute qualité">PDF</button>
+  <button id="png" title="Image haute résolution">Image</button>
   <button id="csv" title="Les mots et phrases, une ligne par idée">Idées (tableur)</button>
   <button id="vider">Vider</button>
 </div>
-<div id="impression"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -327,7 +316,8 @@ if (admin) {
   document.querySelectorAll('#barre [data-vue]').forEach((b) => b.addEventListener('click', () => changerVue(b.dataset.vue)));
   $('recentrer').onclick = () => recentrer();
   $('vider').onclick = () => { if (confirm('Vider tout le tableau (mots, post-it et photos) ?')) admin_('vider'); };
-  $('pdf').onclick = exporterPDF;
+  $('pdf').onclick = () => exporter('pdf');
+  $('png').onclick = () => exporter('png');
   $('csv').onclick = exporterCSV;
   let t; const barre = $('barre');
   const montrer = () => { barre.classList.remove('cache'); clearTimeout(t); t = setTimeout(() => barre.classList.add('cache'), 4000); };
@@ -351,36 +341,110 @@ function exporterCSV() {
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
-// ---- Export PDF : tout le tableau sur une seule grande page, texte net (vectoriel) ----
-async function exporterPDF() {
-  const conteneur = $('impression'); conteneur.replaceChildren();
-  if (!etat.mots.length && !etat.messages.length && !etat.photos.length) return alert('Le tableau est vide : rien à exporter.');
+// ---- Export du tableau entier (PDF ou image), généré par la page : marche dans Chrome comme dans Safari ----
+const NS = 'http://www.w3.org/2000/svg';
+const POLICE_EXPORT = 'Helvetica, Arial, sans-serif';
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// Recadre la photo comme à l'écran (remplissage) et la renvoie en JPEG net.
+async function photoPourExport(it) {
+  const im = new Image(); im.src = '/img/' + it.id;
+  await im.decode();
+  const iw = it.w - 16, ih = it.h - 16, f = 4;
+  const c = document.createElement('canvas'); c.width = Math.round(iw * f); c.height = Math.round(ih * f);
+  const k = Math.max(c.width / im.naturalWidth, c.height / im.naturalHeight);
+  const sw = c.width / k, sh = c.height / k;
+  c.getContext('2d').drawImage(im, (im.naturalWidth - sw) / 2, (im.naturalHeight - sh) / 2, sw, sh, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.92);
+}
+
+function lignesPostit(texte, taille, largeur) {
+  mesure.font = `600 ${taille}px ${FONT}`;
+  const lignes = []; let cour = '';
+  for (const mot of texte.split(' ')) {
+    const essai = cour ? cour + ' ' + mot : mot;
+    if (cour && mesure.measureText(essai).width > largeur) { lignes.push(cour); cour = mot; } else cour = essai;
+  }
+  if (cour) lignes.push(cour);
+  return lignes;
+}
+
+async function construireSVG() {
   const d = disposition(etat, 16 / 9);
   const x0 = Math.min(...d.zones.map((r) => r.x)), y0 = Math.min(...d.zones.map((r) => r.y));
   const bw = Math.max(...d.zones.map((r) => r.x + r.w)) - x0, bh = Math.max(...d.zones.map((r) => r.y + r.h)) - y0;
-  const pad = 100, haut = 200;
-  const W = bw + pad * 2, H = bh + pad + haut;
-  const s = Math.min(1, 15000 / Math.max(W, H));
-  const page = document.createElement('div');
-  page.className = 'page-imp'; page.style.cssText = `width:${Math.round(W * s)}px; height:${Math.round(H * s)}px`;
-  const titre = document.createElement('h1');
-  titre.textContent = `Tableau — ${new Date().toLocaleDateString('fr-CA')}`;
-  titre.style.cssText = `left:${pad * s}px; top:${60 * s}px; font-size:${72 * s}px`;
-  const interieur = document.createElement('div');
-  interieur.style.cssText = `position:absolute; left:0; top:0; transform-origin:0 0; transform:scale(${s})`;
+  const pad = 100, haut = 200, W = Math.round(bw + pad * 2), H = Math.round(bh + pad + haut);
+  const ox = pad - x0, oy = haut - y0;
+  const f = `font-family="${POLICE_EXPORT}"`;
+  const parts = [`<rect width="${W}" height="${H}" fill="#fbf6f3"/>`,
+    `<text x="${pad}" y="135" font-size="72" font-weight="700" fill="#2d1f2e" ${f}>${esc('Tableau — ' + new Date().toLocaleDateString('fr-CA'))}</text>`];
   for (const it of d.items) {
-    const el = creer(it); placer(el, { ...it, x: it.x - x0 + pad, y: it.y - y0 + haut });
-    interieur.appendChild(el);
+    const x = it.x + ox, y = it.y + oy;
+    if (it.type === 'zone') {
+      parts.push(`<rect x="${x}" y="${y}" width="${it.w}" height="${it.h}" rx="40" fill="#ffffff" stroke="#e9d9e2" stroke-width="3"/>`);
+      parts.push(`<text x="${x + 50}" y="${y + 74}" font-size="46" font-weight="700" fill="#7a6a7b" ${f}>${esc(it.titre + (it.n ? '  ·  ' + it.n : ''))}</text>`);
+    } else if (it.type === 'mot') {
+      parts.push(`<text x="${x}" y="${y + it.taille * 0.86}" font-size="${it.taille}" font-weight="700" fill="${it.couleur}" ${f}>${esc(it.texte)}</text>`);
+    } else if (it.type === 'postit') {
+      const lh = it.taille * 1.25, lignes = lignesPostit(it.texte, it.taille, it.w - 28).slice(0, Math.floor((it.h - 28) / lh));
+      const y1 = -(lignes.length * lh) / 2 + it.taille * 0.95;
+      const txt = lignes.map((l, i) => `<text x="0" y="${(y1 + i * lh).toFixed(1)}" text-anchor="middle" font-size="${it.taille}" font-weight="700" fill="#2d1f2e" ${f}>${esc(l)}</text>`).join('');
+      parts.push(`<g transform="translate(${x + it.w / 2} ${y + it.h / 2}) rotate(${it.rot})"><rect x="${-it.w / 2 + 4}" y="${-it.h / 2 + 6}" width="${it.w}" height="${it.h}" rx="4" fill="#2d1f2e" fill-opacity="0.10"/><rect x="${-it.w / 2}" y="${-it.h / 2}" width="${it.w}" height="${it.h}" rx="4" fill="${it.couleur}"/>${txt}</g>`);
+    } else if (it.type === 'photo') {
+      let url; try { url = await photoPourExport(it); } catch { continue; }
+      parts.push(`<g transform="translate(${x + it.w / 2} ${y + it.h / 2}) rotate(${it.rot})"><rect x="${-it.w / 2 + 4}" y="${-it.h / 2 + 6}" width="${it.w}" height="${it.h}" rx="3" fill="#2d1f2e" fill-opacity="0.14"/><rect x="${-it.w / 2}" y="${-it.h / 2}" width="${it.w}" height="${it.h}" rx="3" fill="#ffffff"/><image x="${-it.w / 2 + 8}" y="${-it.h / 2 + 8}" width="${it.w - 16}" height="${it.h - 16}" href="${url}" xlink:href="${url}" preserveAspectRatio="none"/></g>`);
+    }
   }
-  page.append(titre, interieur); conteneur.appendChild(page);
-  const style = document.createElement('style');
-  style.textContent = `@page { size: ${Math.round(W * s)}px ${Math.round(H * s)}px; margin: 0 }`;
-  document.head.appendChild(style);
-  await Promise.all([...conteneur.querySelectorAll('img')].map((im) => im.decode().catch(() => {})));
-  alert("Dans la fenêtre d'impression : destination « Enregistrer au format PDF », puis décoche « En-têtes et pieds de page ».");
-  print();
-  style.remove(); conteneur.replaceChildren();
+  const svg = `<svg xmlns="${NS}" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${parts.join('')}</svg>`;
+  return { svg, W, H };
 }
+
+function telecharger(blob, nom) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+function charger(src) {
+  return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+}
+
+let exportEnCours = false;
+async function exporter(format) {
+  if (exportEnCours) return;
+  if (!etat.mots.length && !etat.messages.length && !etat.photos.length) return alert('Le tableau est vide : rien à exporter.');
+  exportEnCours = true;
+  const bouton = $(format); const libelle = bouton.textContent; bouton.textContent = 'Un instant…';
+  try {
+    const { svg, W, H } = await construireSVG();
+    const date = new Date().toISOString().slice(0, 10);
+    if (format === 'png') {
+      // Image très grande mais raisonnable pour le navigateur (max 8000 px de côté, 40 millions de pixels).
+      const k = Math.min(8000 / Math.max(W, H), Math.sqrt(40e6 / (W * H)), 3);
+      const img = new Image();
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      await img.decode();
+      const c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k);
+      const g = c.getContext('2d'); g.drawImage(img, 0, 0, c.width, c.height);
+      const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+      telecharger(blob, `tableau-${date}.png`);
+    } else {
+      if (!window.jspdf) await charger('/lib/jspdf.umd.min.js');
+      if (!window.svg2pdf) await charger('/lib/svg2pdf.umd.min.js');
+      const s = Math.min(1, 14000 / Math.max(W, H)); // limite de taille d'une page PDF
+      const doc = new window.jspdf.jsPDF({ unit: 'px', format: [W * s, H * s], orientation: W >= H ? 'l' : 'p', hotfixes: ['px_scaling'], compress: true });
+      const el = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
+      el.style.cssText = 'position:fixed;left:-99999px;top:0';
+      document.body.appendChild(el);
+      try { await (window.svg2pdf.svg2pdf || window.svg2pdf)(el, doc, { x: 0, y: 0, width: W * s, height: H * s }); } finally { el.remove(); }
+      telecharger(doc.output('blob'), `tableau-${date}.pdf`);
+    }
+  } catch (e) {
+    console.error(e);
+    alert("L'export n'a pas fonctionné. Réessaie, ou utilise l'autre format (PDF / Image).");
+  } finally { bouton.textContent = libelle; exportEnCours = false; }
+}
+
 
 // ---- Connexion en direct ----
 let ws;
