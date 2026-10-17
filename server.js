@@ -15,8 +15,8 @@ const MAX_MESSAGE = 200;
 const MAX_MOT = 30;
 const MAX_PHOTO = 3 * 1024 * 1024;
 
-// État du tableau (en mémoire). vue : 'mots' | 'postit' | 'photos'
-const etat = { vue: 'mots', mots: [], messages: [], photos: [] };
+// État du tableau (en mémoire). vue : 'tout' | 'mots' | 'postit' | 'photos'
+const etat = { vue: 'tout', mots: [], messages: [], photos: [] };
 const images = new Map(); // id -> { buf, type }
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
@@ -76,7 +76,7 @@ wss.on('connection', (ws) => {
       ws.send(JSON.stringify({ t: 'refus' }));
       return;
     } else if (m.t === 'admin') {
-      if (m.action === 'vue' && ['mots', 'postit', 'photos'].includes(m.vue)) etat.vue = m.vue;
+      if (m.action === 'vue' && ['tout', 'mots', 'postit', 'photos'].includes(m.vue)) etat.vue = m.vue;
       else if (m.action === 'supprimer') {
         const liste = { mot: 'mots', message: 'messages', photo: 'photos' }[m.type];
         if (liste === 'mots') {

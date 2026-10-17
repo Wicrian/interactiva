@@ -12,13 +12,17 @@
   #scene { position: fixed; inset: 0; touch-action: none; cursor: grab; }
   #scene.glisse { cursor: grabbing; }
   #monde { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
-  #monde.anim { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+  #monde.anim { transition: transform .7s cubic-bezier(.2,.7,.2,1); }
 
-  .el { position: absolute; left: 0; top: 0; }
-  .el.anim { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+  .el { position: absolute; left: 0; top: 0; z-index: 1; }
+  .el.anim { transition: transform .7s cubic-bezier(.2,.7,.2,1), width .7s, height .7s; }
+  .zone { z-index: 0; background: #fff; border: 2px solid #f0e3ea; border-radius: 40px; box-shadow: 0 10px 40px rgba(45,31,46,.08); }
+  .zone h3 { position: absolute; left: 50px; top: 30px; margin: 0; font-size: 46px; font-weight: 800; color: var(--doux); white-space: nowrap; }
+  .zone h3 small { font-weight: 600; font-size: .6em; color: #b3a4b4; margin-left: 10px; }
+  .admin.tout .zone { cursor: pointer; }
   .mot { font-weight: 800; line-height: 1.1; white-space: nowrap; letter-spacing: -.01em; }
   .postit { padding: 14px; font-weight: 600; line-height: 1.25; overflow: hidden; overflow-wrap: anywhere; border-radius: 4px; box-shadow: 0 6px 14px rgba(45,31,46,.16); display: flex; align-items: center; justify-content: center; text-align: center; }
-  .photo { background: #fff; padding: 8px 8px 8px; box-shadow: 0 8px 20px rgba(45,31,46,.22); border-radius: 3px; }
+  .photo { background: #fff; padding: 8px; box-shadow: 0 8px 20px rgba(45,31,46,.22); border-radius: 3px; }
   .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .el.neuf { animation: pop .45s cubic-bezier(.2,.9,.3,1.3); }
   @keyframes pop { from { opacity: 0; scale: .6; } }
@@ -27,11 +31,16 @@
   .suppr { position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--rose); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; display: none; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
   .admin .el:hover .suppr, .suppr:focus-visible { display: block; }
 
-  #vide { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; color: var(--doux); font-size: 2rem; pointer-events: none; padding: 0 10vw; }
-  #vide b { color: var(--rose-fonce); }
-  #pied { position: fixed; left: 20px; bottom: 16px; color: var(--doux); font-size: 1.1rem; pointer-events: none; }
-  #pied b { color: var(--encre); }
-  #barre { position: fixed; top: 14px; right: 14px; display: none; gap: 6px; background: #fff; padding: 6px; border-radius: 14px; box-shadow: 0 6px 20px rgba(45,31,46,.18); transition: opacity .4s; }
+  #pied { position: fixed; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px; background: #fff; padding: 10px 16px 10px 10px; border-radius: 16px; box-shadow: 0 6px 20px rgba(45,31,46,.14); cursor: pointer; border: 0; font: inherit; color: var(--doux); text-align: left; }
+  #pied img { width: 84px; height: 84px; display: block; }
+  #pied b { color: var(--encre); display: block; font-size: 1.05rem; }
+  #pied:focus-visible { outline: 3px solid var(--rose); }
+  #grandqr { position: fixed; inset: 0; background: rgba(251,246,243,.97); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 10; cursor: pointer; font-size: 2rem; color: var(--doux); text-align: center; }
+  #grandqr.ouvert { display: flex; }
+  #grandqr img { width: min(66vh, 80vw); height: min(66vh, 80vw); background: #fff; border-radius: 24px; box-shadow: 0 10px 40px rgba(45,31,46,.15); }
+  #grandqr b { color: var(--encre); }
+
+  #barre { position: fixed; top: 14px; right: 14px; display: none; gap: 6px; background: #fff; padding: 6px; border-radius: 14px; box-shadow: 0 6px 20px rgba(45,31,46,.18); transition: opacity .4s; z-index: 5; }
   .admin #barre { display: flex; }
   #barre.cache { opacity: 0; pointer-events: none; }
   #barre button { font: inherit; font-weight: 600; border: 0; background: transparent; color: var(--encre); padding: 10px 14px; border-radius: 10px; cursor: pointer; }
@@ -42,28 +51,29 @@
   #impression { display: none; }
 
   @media print {
-    html, body { overflow: visible; height: auto; background: #fff; }
+    html, body { overflow: visible; height: auto; background: #fbf6f3; }
     body > *:not(#impression) { display: none !important; }
     #impression { display: block; }
-    .page-imp { position: relative; overflow: hidden; break-after: page; background: #fbf6f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .page-imp:last-child { break-after: auto; }
+    #impression .page-imp { position: relative; overflow: hidden; background: #fbf6f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page-imp .el { transition: none; animation: none; }
-    .page-imp h2 { position: absolute; margin: 0; font-weight: 700; color: #7a6a7b; }
+    .page-imp h1 { position: absolute; margin: 0; font-weight: 800; color: #2d1f2e; }
     .suppr { display: none !important; }
   }
 </style>
 </head>
 <body>
 <div id="scene"><div id="monde"></div></div>
-<div id="vide"><p>En attendant vos idées…<br><b id="vide-lien"></b></p></div>
-<div id="pied">Participe sur <b id="lien"></b></div>
+<button id="pied" aria-label="Agrandir le QR code"><img src="/qr.svg" alt="QR code pour participer"><span>Scanne pour participer<b id="lien"></b></span></button>
+<div id="grandqr" role="dialog" aria-label="QR code pour participer"><img src="/qr.svg" alt="QR code pour participer"><div>Scanne pour participer<br><b id="lien2"></b></div></div>
 <div id="barre" role="toolbar" aria-label="Contrôles de l'animateur">
-  <button data-vue="mots" aria-pressed="true">Mots</button>
+  <button data-vue="tout" aria-pressed="true">Tout</button>
+  <button data-vue="mots" aria-pressed="false">Mots</button>
   <button data-vue="postit" aria-pressed="false">Post-it</button>
   <button data-vue="photos" aria-pressed="false">Photos</button>
   <span class="sep"></span>
-  <button id="recentrer" title="Tout voir (touche 0)">Recentrer</button>
-  <button id="pdf">Exporter en PDF</button>
+  <button id="recentrer" title="Remettre dans le cadre (touche 0)">Recentrer</button>
+  <button id="pdf">PDF</button>
+  <button id="csv" title="Les mots et phrases, une ligne par idée">Idées (tableur)</button>
   <button id="vider">Vider</button>
 </div>
 <div id="impression"></div>
@@ -73,17 +83,16 @@ const $ = (id) => document.getElementById(id);
 const code = new URLSearchParams(location.search).get('code');
 const admin = !!code;
 if (admin) document.body.classList.add('admin');
-$('lien').textContent = $('vide-lien').textContent = location.host;
+$('lien').textContent = $('lien2').textContent = location.host;
 
 const FONT = '-apple-system, "Segoe UI", system-ui, sans-serif';
-const MARGE = 18;
+const MARGE = 18, PAD = 50, TITRE = 100, ECART = 140;
 const COULEURS_MOTS = ['#e0447c', '#6b3fa0', '#2a7f9e', '#d9822b', '#3a8f5a', '#b82d62'];
 const COULEURS_POSTIT = ['#fff3a8', '#ffd1e0', '#cfe8ff', '#d4f4d0', '#ffe0b8', '#e6d9ff'];
-const TITRES = { mots: 'Nuage de mots', postit: 'Post-it', photos: 'Photos' };
+const NOMS = { mots: 'Nuage de mots', postit: 'Post-it', photos: 'Photos' };
 
 const cle = (s) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 function hash(s) { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); }
-
 const mesure = document.createElement('canvas').getContext('2d');
 
 // Place les éléments un par un en spirale, sans jamais les superposer.
@@ -103,8 +112,8 @@ function spirale(items) {
   return items;
 }
 
-function disposition(vue, etat) {
-  if (vue === 'mots') {
+function contenu(v, etat) {
+  if (v === 'mots') {
     const groupes = new Map();
     for (const m of etat.mots) {
       const k = cle(m.texte);
@@ -121,7 +130,7 @@ function disposition(vue, etat) {
     }
     return spirale(liste);
   }
-  if (vue === 'postit') {
+  if (v === 'postit') {
     return spirale(etat.messages.map((m) => {
       const l = m.texte.length;
       return { id: m.id, type: 'postit', texte: m.texte, w: 240, h: 190, taille: l <= 40 ? 26 : l <= 90 ? 22 : l <= 150 ? 18 : 15,
@@ -134,19 +143,6 @@ function disposition(vue, etat) {
   }));
 }
 
-function creer(it) {
-  const el = document.createElement('div');
-  el.className = 'el ' + it.type; el.dataset.id = it.id;
-  if (it.type === 'mot') { el.textContent = it.texte; el.style.fontSize = it.taille + 'px'; el.style.color = it.couleur; }
-  if (it.type === 'postit') { el.textContent = it.texte; el.style.fontSize = it.taille + 'px'; el.style.background = it.couleur; }
-  if (it.type === 'photo') { const im = document.createElement('img'); im.src = '/img/' + it.id; im.alt = ''; el.appendChild(im); }
-  return el;
-}
-function placer(el, it) {
-  el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
-  el.style.transform = `translate(${it.x}px, ${it.y}px) rotate(${it.rot || 0}deg)`;
-  if (it.type === 'mot') el.style.fontSize = it.taille + 'px';
-}
 function boite(items) {
   if (!items.length) return { x: -300, y: -200, w: 600, h: 400 };
   const x0 = Math.min(...items.map((i) => i.x)), y0 = Math.min(...items.map((i) => i.y));
@@ -154,130 +150,234 @@ function boite(items) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+// Trois zones (mots, post-it, photos) rangées au mieux pour le format de l'écran.
+function disposition(etat, aspect) {
+  const compte = { mots: etat.mots.length, postit: etat.messages.length, photos: etat.photos.length };
+  const zs = ['mots', 'postit', 'photos'].map((v) => {
+    const its = contenu(v, etat);
+    const b = boite(its);
+    if (b.w < 520) { b.x -= (520 - b.w) / 2; b.w = 520; }
+    if (b.h < 340) { b.y -= (340 - b.h) / 2; b.h = 340; }
+    const r = { id: 'z:' + v, type: 'zone', v, titre: NOMS[v], n: compte[v], x: b.x - PAD, y: b.y - PAD - TITRE, w: b.w + 2 * PAD, h: b.h + 2 * PAD + TITRE };
+    return { v, its, r };
+  });
+  const [m, p, f] = zs.map((z) => z.r);
+  const cand = [];
+  { // A : trois en ligne
+    const H = Math.max(m.h, p.h, f.h); let x = 0; const pos = [];
+    for (const r of [m, p, f]) { pos.push({ x, y: (H - r.h) / 2 }); x += r.w + ECART; }
+    cand.push({ pos, W: x - ECART, H });
+  }
+  { // B : mots en haut, post-it et photos dessous
+    const Wb = p.w + ECART + f.w, W = Math.max(m.w, Wb), Hb = Math.max(p.h, f.h), y2 = m.h + ECART;
+    cand.push({ pos: [{ x: (W - m.w) / 2, y: 0 }, { x: (W - Wb) / 2, y: y2 + (Hb - p.h) / 2 }, { x: (W - Wb) / 2 + p.w + ECART, y: y2 + (Hb - f.h) / 2 }], W, H: y2 + Hb });
+  }
+  { // C : mots à gauche, post-it au-dessus des photos à droite
+    const col = Math.max(p.w, f.w), hc = p.h + ECART + f.h, H = Math.max(m.h, hc), x2 = m.w + ECART;
+    cand.push({ pos: [{ x: 0, y: (H - m.h) / 2 }, { x: x2 + (col - p.w) / 2, y: (H - hc) / 2 }, { x: x2 + (col - f.w) / 2, y: (H - hc) / 2 + p.h + ECART }], W: x2 + col, H });
+  }
+  const meilleur = cand.reduce((a, c) => (Math.min(aspect / c.W, 1 / c.H) > Math.min(aspect / a.W, 1 / a.H) ? c : a));
+  const panneaux = [], contenus = [];
+  zs.forEach((z, i) => {
+    const dx = meilleur.pos[i].x - z.r.x, dy = meilleur.pos[i].y - z.r.y;
+    z.r.x += dx; z.r.y += dy;
+    for (const it of z.its) { it.x += dx; it.y += dy; contenus.push(it); }
+    panneaux.push(z.r);
+  });
+  return { items: [...panneaux, ...contenus], zones: panneaux };
+}
+
+function creer(it) {
+  const el = document.createElement('div');
+  el.className = 'el ' + it.type; el.dataset.id = it.id;
+  if (it.type === 'zone') { const h = document.createElement('h3'); el.appendChild(h); }
+  if (it.type === 'mot') { el.textContent = it.texte; el.style.color = it.couleur; }
+  if (it.type === 'postit') { el.textContent = it.texte; el.style.background = it.couleur; }
+  if (it.type === 'photo') { const im = document.createElement('img'); im.src = '/img/' + it.id; im.alt = ''; el.appendChild(im); }
+  return el;
+}
+function placer(el, it) {
+  el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
+  el.style.transform = `translate(${it.x}px, ${it.y}px) rotate(${it.rot || 0}deg)`;
+  if (it.taille) el.style.fontSize = it.taille + 'px';
+  if (it.type === 'zone') {
+    const h = el.firstChild; h.textContent = it.titre;
+    if (it.n) { const s = document.createElement('small'); s.textContent = it.n; h.appendChild(s); }
+  }
+}
+
 // ---- Affichage ----
 const monde = $('monde'), scene = $('scene');
 const dom = new Map();
-let etat = { vue: 'mots', mots: [], messages: [], photos: [] };
-let items = [], vue = { x: 0, y: 0, k: 1 }, auto = true, vueAffichee = null;
+let etat = { vue: 'tout', mots: [], messages: [], photos: [] };
+let items = [], zones = [], vue = { x: 0, y: 0, k: 1 }, auto = true, derniereVue = null;
 
 function appliquerVue(anim) {
   monde.classList.toggle('anim', !!anim);
   monde.style.transform = `translate(${vue.x}px, ${vue.y}px) scale(${vue.k})`;
 }
+function cadre() {
+  const z = zones.find((r) => r.v === etat.vue);
+  if (z) return z;
+  const x0 = Math.min(...zones.map((r) => r.x)), y0 = Math.min(...zones.map((r) => r.y));
+  return { x: x0, y: y0, w: Math.max(...zones.map((r) => r.x + r.w)) - x0, h: Math.max(...zones.map((r) => r.y + r.h)) - y0 };
+}
 function recentrer(anim = true) {
-  const b = boite(items);
-  const lw = innerWidth * 0.92, lh = (innerHeight - 70) * 0.92;
-  vue.k = Math.min(lw / b.w, lh / b.h, 1.5);
+  const b = cadre();
+  const reserve = 120; // place laissée en bas pour le QR code
+  const lw = innerWidth * 0.95, lh = (innerHeight - reserve) * 0.95;
+  vue.k = Math.min(lw / b.w, lh / b.h, 2.5);
   vue.x = innerWidth / 2 - (b.x + b.w / 2) * vue.k;
-  vue.y = (innerHeight - 40) / 2 - (b.y + b.h / 2) * vue.k;
+  vue.y = (innerHeight - reserve) / 2 - (b.y + b.h / 2) * vue.k;
   auto = true; appliquerVue(anim);
 }
 
 function rendre() {
-  const changementVue = vueAffichee !== etat.vue;
-  vueAffichee = etat.vue;
-  if (changementVue) { monde.replaceChildren(); dom.clear(); }
-  items = disposition(etat.vue, etat);
+  const d = disposition(etat, innerWidth / innerHeight);
+  items = d.items; zones = d.zones;
   const vus = new Set();
   for (const it of items) {
     vus.add(it.id);
     let el = dom.get(it.id);
     if (!el) {
       el = creer(it);
-      if (admin) {
+      if (admin && it.type !== 'zone') {
         const b = document.createElement('button');
         b.className = 'suppr'; b.textContent = '×'; b.setAttribute('aria-label', 'Supprimer');
         b.addEventListener('pointerdown', (e) => e.stopPropagation());
-        b.addEventListener('click', () => ws.send(JSON.stringify({ t: 'admin', code, action: 'supprimer', type: it.type, id: it.type === 'mot' ? it.mid : it.id })));
+        b.addEventListener('click', (e) => { e.stopPropagation(); ws.send(JSON.stringify({ t: 'admin', code, action: 'supprimer', type: it.type, id: it.type === 'mot' ? it.mid : it.id })); });
         el.appendChild(b);
       }
       placer(el, it);
-      if (!changementVue) el.classList.add('neuf');
+      if (derniereVue !== null && it.type !== 'zone') el.classList.add('neuf');
       monde.appendChild(el); dom.set(it.id, el);
       requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('anim')));
     } else placer(el, it);
   }
   for (const [id, el] of dom) if (!vus.has(id)) { el.remove(); dom.delete(id); }
-  $('vide').style.display = items.length ? 'none' : 'flex';
-  $('pied').style.display = items.length ? 'block' : 'none';
+  document.body.classList.toggle('tout', etat.vue === 'tout');
   document.querySelectorAll('#barre [data-vue]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.vue === etat.vue));
-  if (auto || changementVue) recentrer(!changementVue);
+  if (derniereVue === null) recentrer(false);
+  else if (auto || derniereVue !== etat.vue) recentrer(true);
+  derniereVue = etat.vue;
 }
 
-// ---- Zoom et déplacement ----
+// ---- Zoom, déplacement, clic sur une zone ----
 scene.addEventListener('wheel', (e) => {
   e.preventDefault(); auto = false;
   const f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015));
-  const k = Math.min(8, Math.max(0.05, vue.k * f)), r = k / vue.k;
+  const k = Math.min(8, Math.max(0.03, vue.k * f)), r = k / vue.k;
   vue.x = e.clientX - (e.clientX - vue.x) * r; vue.y = e.clientY - (e.clientY - vue.y) * r; vue.k = k;
   appliquerVue(false);
 }, { passive: false });
 
-const pointeurs = new Map(); let distance0 = 0;
-scene.addEventListener('pointerdown', (e) => { scene.setPointerCapture(e.pointerId); pointeurs.set(e.pointerId, [e.clientX, e.clientY]); scene.classList.add('glisse'); distance0 = 0; });
+const pointeurs = new Map(); let distance0 = 0, depart = null;
+scene.addEventListener('pointerdown', (e) => {
+  scene.setPointerCapture(e.pointerId); pointeurs.set(e.pointerId, [e.clientX, e.clientY]); scene.classList.add('glisse'); distance0 = 0;
+  depart = pointeurs.size === 1 ? { x: e.clientX, y: e.clientY, bouge: false } : null;
+});
 scene.addEventListener('pointermove', (e) => {
   if (!pointeurs.has(e.pointerId)) return;
   const [px, py] = pointeurs.get(e.pointerId); pointeurs.set(e.pointerId, [e.clientX, e.clientY]);
+  if (depart && Math.hypot(e.clientX - depart.x, e.clientY - depart.y) > 6) depart.bouge = true;
+  if (depart && !depart.bouge) return;
   auto = false;
   if (pointeurs.size === 1) { vue.x += e.clientX - px; vue.y += e.clientY - py; }
   else if (pointeurs.size === 2) {
     const [a, b] = [...pointeurs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
     if (distance0) {
-      const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, k = Math.min(8, Math.max(0.05, vue.k * d / distance0)), r = k / vue.k;
+      const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, k = Math.min(8, Math.max(0.03, vue.k * d / distance0)), r = k / vue.k;
       vue.x = cx - (cx - vue.x) * r; vue.y = cy - (cy - vue.y) * r; vue.k = k;
     }
     distance0 = d;
   }
   appliquerVue(false);
 });
-const fin = (e) => { pointeurs.delete(e.pointerId); distance0 = 0; if (!pointeurs.size) scene.classList.remove('glisse'); };
+function clic(x, y) {
+  if (!admin) return;
+  const wx = (x - vue.x) / vue.k, wy = (y - vue.y) / vue.k;
+  const z = zones.find((r) => wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h);
+  if (z && z.v !== etat.vue) changerVue(z.v);
+  else if (!z && etat.vue !== 'tout') changerVue('tout');
+}
+const fin = (e) => {
+  const clique = depart && !depart.bouge && pointeurs.size === 1 && e.type === 'pointerup';
+  pointeurs.delete(e.pointerId); distance0 = 0;
+  if (!pointeurs.size) scene.classList.remove('glisse');
+  if (clique) clic(e.clientX, e.clientY);
+  depart = null;
+};
 scene.addEventListener('pointerup', fin); scene.addEventListener('pointercancel', fin);
-scene.addEventListener('dblclick', () => recentrer());
-addEventListener('resize', () => { if (auto) recentrer(false); });
+addEventListener('resize', () => { rendre(); });
+
+// ---- QR code ----
+const basculerQR = () => $('grandqr').classList.toggle('ouvert');
+$('pied').onclick = basculerQR; $('grandqr').onclick = basculerQR;
 
 // ---- Contrôles animateur ----
 function admin_(action, extra) { ws.send(JSON.stringify({ t: 'admin', code, action, ...extra })); }
+function changerVue(v) { admin_('vue', { vue: v }); }
 addEventListener('keydown', (e) => {
   if (e.key === '0') recentrer();
-  if (admin && ['1', '2', '3'].includes(e.key)) admin_('vue', { vue: ['mots', 'postit', 'photos'][e.key - 1] });
+  if (e.key === 'q' || e.key === 'Q') basculerQR();
+  if (e.key === 'Escape') { $('grandqr').classList.remove('ouvert'); if (admin) changerVue('tout'); }
+  if (admin && ['1', '2', '3'].includes(e.key)) changerVue(['mots', 'postit', 'photos'][e.key - 1]);
 });
 if (admin) {
-  document.querySelectorAll('#barre [data-vue]').forEach((b) => b.addEventListener('click', () => admin_('vue', { vue: b.dataset.vue })));
+  document.querySelectorAll('#barre [data-vue]').forEach((b) => b.addEventListener('click', () => changerVue(b.dataset.vue)));
   $('recentrer').onclick = () => recentrer();
   $('vider').onclick = () => { if (confirm('Vider tout le tableau (mots, post-it et photos) ?')) admin_('vider'); };
   $('pdf').onclick = exporterPDF;
+  $('csv').onclick = exporterCSV;
   let t; const barre = $('barre');
   const montrer = () => { barre.classList.remove('cache'); clearTimeout(t); t = setTimeout(() => barre.classList.add('cache'), 4000); };
   addEventListener('mousemove', montrer); addEventListener('pointerdown', montrer); montrer();
 }
 
-// ---- Export PDF : une page par vue, taille adaptée au contenu, texte net (vectoriel) ----
+// ---- Export des idées : une ligne par idée, sans nom, à rendre aux participants ----
+function exporterCSV() {
+  const groupes = new Map();
+  for (const m of etat.mots) { const k = cle(m.texte); const g = groupes.get(k) || { texte: m.texte, n: 0 }; g.n++; groupes.set(k, g); }
+  const lignes = [['Type', 'Idée', 'Nombre de fois']];
+  [...groupes.values()].sort((a, b) => b.n - a.n).forEach((g) => lignes.push(['Mot', g.texte, g.n]));
+  etat.messages.forEach((m) => lignes.push(['Phrase', m.texte, '']));
+  if (lignes.length === 1) return alert("Il n'y a encore aucune idée à exporter.");
+  // Une apostrophe devant =, +, -, @ évite qu'un tableur lise le texte comme une formule.
+  const champ = (c) => { let s = String(c); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  const csv = '﻿' + lignes.map((l) => l.map(champ).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `idees-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// ---- Export PDF : tout le tableau sur une seule grande page, texte net (vectoriel) ----
 async function exporterPDF() {
   const conteneur = $('impression'); conteneur.replaceChildren();
-  const css = []; const date = new Date().toLocaleDateString('fr-CA');
-  ['mots', 'postit', 'photos'].forEach((v, i) => {
-    const liste = disposition(v, etat);
-    if (!liste.length) return;
-    const b = boite(liste), pad = 80, haut = 140;
-    let W = b.w + pad * 2, H = b.h + pad + haut;
-    const s = Math.min(1, 15000 / Math.max(W, H));
-    const page = document.createElement('div');
-    page.className = 'page-imp'; page.style.cssText = `page: p${i}; width:${W * s}px; height:${H * s}px`;
-    const titre = document.createElement('h2');
-    titre.textContent = `${TITRES[v]} — ${date}`; titre.style.cssText = `left:${pad * s}px; top:${40 * s}px; font-size:${40 * s}px`;
-    const interieur = document.createElement('div');
-    interieur.style.cssText = `position:absolute; left:0; top:0; transform-origin:0 0; transform:scale(${s})`;
-    for (const it of liste) {
-      const el = creer(it); placer(el, { ...it, x: it.x - b.x + pad, y: it.y - b.y + haut });
-      interieur.appendChild(el);
-    }
-    page.append(titre, interieur); conteneur.appendChild(page);
-    css.push(`@page p${i} { size: ${W * s}px ${H * s}px; margin: 0 }`);
-  });
-  if (!conteneur.children.length) return alert('Le tableau est vide : rien à exporter.');
-  const style = document.createElement('style'); style.textContent = css.join('\n'); document.head.appendChild(style);
+  if (!etat.mots.length && !etat.messages.length && !etat.photos.length) return alert('Le tableau est vide : rien à exporter.');
+  const d = disposition(etat, 16 / 9);
+  const x0 = Math.min(...d.zones.map((r) => r.x)), y0 = Math.min(...d.zones.map((r) => r.y));
+  const bw = Math.max(...d.zones.map((r) => r.x + r.w)) - x0, bh = Math.max(...d.zones.map((r) => r.y + r.h)) - y0;
+  const pad = 100, haut = 200;
+  const W = bw + pad * 2, H = bh + pad + haut;
+  const s = Math.min(1, 15000 / Math.max(W, H));
+  const page = document.createElement('div');
+  page.className = 'page-imp'; page.style.cssText = `width:${Math.round(W * s)}px; height:${Math.round(H * s)}px`;
+  const titre = document.createElement('h1');
+  titre.textContent = `Tableau — ${new Date().toLocaleDateString('fr-CA')}`;
+  titre.style.cssText = `left:${pad * s}px; top:${60 * s}px; font-size:${72 * s}px`;
+  const interieur = document.createElement('div');
+  interieur.style.cssText = `position:absolute; left:0; top:0; transform-origin:0 0; transform:scale(${s})`;
+  for (const it of d.items) {
+    const el = creer(it); placer(el, { ...it, x: it.x - x0 + pad, y: it.y - y0 + haut });
+    interieur.appendChild(el);
+  }
+  page.append(titre, interieur); conteneur.appendChild(page);
+  const style = document.createElement('style');
+  style.textContent = `@page { size: ${Math.round(W * s)}px ${Math.round(H * s)}px; margin: 0 }`;
+  document.head.appendChild(style);
   await Promise.all([...conteneur.querySelectorAll('img')].map((im) => im.decode().catch(() => {})));
-  alert("Dans la fenêtre d'impression, choisis « Enregistrer au format PDF » comme destination, et décoche « En-têtes et pieds de page ». Marges : aucune.");
+  alert("Dans la fenêtre d'impression : destination « Enregistrer au format PDF », puis décoche « En-têtes et pieds de page ».");
   print();
   style.remove(); conteneur.replaceChildren();
 }
@@ -294,7 +394,7 @@ function connecter() {
   ws.onclose = () => setTimeout(connecter, 1500);
 }
 connecter();
-recentrer(false);
+rendre();
 </script>
 </body>
 </html>
