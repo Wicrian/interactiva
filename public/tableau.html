@@ -114,7 +114,7 @@ function disposition(vue, etat) {
     const liste = [...groupes.values()].sort((a, b) => b.n - a.n);
     const max = liste.length ? liste[0].n : 1;
     for (const g of liste) {
-      g.taille = 32 + 100 * Math.sqrt(g.n / max);
+      g.taille = 26 + 124 * Math.pow(g.n / max, 0.85);
       mesure.font = `800 ${g.taille}px ${FONT}`;
       g.w = mesure.measureText(g.texte).width + 8; g.h = g.taille * 1.15;
       g.couleur = COULEURS_MOTS[hash(cle(g.texte)) % COULEURS_MOTS.length];
