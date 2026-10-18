@@ -41,6 +41,9 @@ const serveur = http.createServer((req, res) => {
     return;
   }
 
+  // Petite route que le tableau interroge régulièrement pour que l'hébergeur ne mette pas le serveur en veille.
+  if (url.pathname === '/sante') return res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' }).end('ok');
+
   if (url.pathname.startsWith('/img/')) {
     const img = images.get(url.pathname.slice(5));
     if (!img) return res.writeHead(404).end();

@@ -446,6 +446,9 @@ async function exporter(format) {
 }
 
 
+// ---- Garder le serveur éveillé tant que le tableau est ouvert (l'hébergeur gratuit s'endort après 15 min sans visite) ----
+setInterval(() => fetch('/sante', { cache: 'no-store' }).catch(() => {}), 4 * 60 * 1000);
+
 // ---- Connexion en direct ----
 let ws;
 function connecter() {

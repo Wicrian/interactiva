@@ -39,6 +39,9 @@ Option simple et gratuite : **Render** (render.com).
 À savoir :
 - Le plan gratuit **s'endort après 15 min sans visite** et met ~50 s à se réveiller : ouvre l'adresse 5 minutes avant la séance.
 - Le tableau est **gardé en mémoire** : si le serveur redémarre, il est vidé. D'où l'export PDF.
+- La page du tableau interroge le serveur toutes les 4 minutes (`/sante`) pour l'empêcher de s'endormir : **garde cette page ouverte pendant toute la séance**, et empêche l'ordinateur de se mettre en veille.
+- **Ne pousse aucune modification sur GitHub pendant une séance** : Render redémarre alors le serveur et le tableau est vidé.
+- Par prudence, fais un export (PDF ou Image) en milieu de séance, puis à la fin.
 
 ## Exports (barre animateur)
 
