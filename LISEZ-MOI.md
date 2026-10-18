@@ -53,7 +53,10 @@ Fonctionnent dans Chrome comme dans Safari : les fichiers sont fabriqués par la
 
 ## Le QR code
 
-Le fichier est dans `QRCODE/`, et une copie sert au tableau (`public/qr.svg`) : un petit QR est affiché en bas à gauche. Clic dessus (ou touche `Q`) pour l'afficher en grand. Si l'adresse du site change, remplacer ce fichier.
+Le QR code **contient directement l'adresse du site** (`https://interactiva.onrender.com/`), sans service intermédiaire : il ne peut pas « casser ».
+Fichiers à imprimer ou à placer dans InDesign : `QRCODE/QR-Interactiva-direct.svg` (vectoriel, net à toute taille) ou `.png` (2048 px).
+Une copie (`public/qr.svg`) sert au tableau : petit QR en bas à gauche, clic dessus (ou touche `Q`) pour l'afficher en grand.
+Si l'adresse du site change un jour, il faudra régénérer le QR code.
 
 ## Limites actuelles
 
